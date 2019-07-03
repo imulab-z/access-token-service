@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package pb;
+
+service AccessTokenService {
+    rpc Issue(IssueRequest) returns (IssueResponse) {}
+    rpc Peek(PeekRequest) returns (PeekResponse) {}
+    rpc Revoke(RevokeRequest) returns (RevokeResponse) {}
+}
+
+message IssueRequest {
+    Session session = 1;
+}
+
+message IssueResponse {
+    bool success = 1;
+    string error_code = 2;
+    string error_description = 3;
+    string access_token = 4;
+}
+
+message PeekRequest {
+    string access_token = 1;
+}
+
+message PeekResponse {
+    bool success = 1;
+    string error_code = 2;
+    string error_description = 3;
+    Session session = 4;
+}
+
+message RevokeRequest {
+    string access_token = 1;
+}
+
+message RevokeResponse {
+    bool success = 1;
+    string error_code = 2;
+    string error_description = 3;
+}
+
+message Session {
+    string request_id = 1;
+    string client_id = 2;
+    string redirect_uri = 3;
+    string subject = 4;
+    repeated string granted_scopes = 5;
+    string access_claims_json = 6;
+}
