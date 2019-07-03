@@ -16,7 +16,7 @@ type loggingMiddleware struct {
 	next 	exported.Service
 }
 
-func (mw loggingMiddleware) Issue(ctx context.Context, session *exported.Session) (string, error) {
+func (mw loggingMiddleware) Issue(ctx context.Context, session *exported.Session) (*exported.AccessToken, error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "Issue",
