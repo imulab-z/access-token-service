@@ -19,7 +19,71 @@ spec:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: HTTP_PORT
+          value: {{ .Values.service.http.internalPort | quote }}
+        - name: GRPC_PORT
+          value: {{ .Values.service.grpc.internalPort | quote }}
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: access-token-service-config
+              key: redis_host
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: access-token-service-config
+              key: redis_port
+        - name: REDIS_PWD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: redis-password
+        - name: REDIS_DB
+          valueFrom:
+            configMapKeyRef:
+              name: access-token-service-config
+              key: redis_db
+        - name: TOKEN_STRATEGY
+          valueFrom:
+            configMapKeyRef:
+              name: access-token-service-config
+              key: token_strategy
+        - name: SIGNING_ALGORITHM
+          valueFrom:
+            configMapKeyRef:
+              name: access-token-service-config
+              key: signing_algorithm
+        - name: DEFAULT_TTL
+          valueFrom:
+            configMapKeyRef:
+              name: access-token-service-config
+              key: default_ttl
+        - name: DEFAULT_LEEWAY
+          valueFrom:
+            configMapKeyRef:
+              name: access-token-service-config
+              key: default_leeway
+        - name: KEY_SERVICE_HOST
+          value: key-service
+        - name: KEY_SERVICE_PORT
+          value: "80"
+        - name: DISCOVERY_SERVICE_HOST
+          value: discovery-service
+        - name: DISCOVERY_SERVICE_PORT
+          value: "80"
         ports:
-        - containerPort: {{ .Values.service.internalPort }}
+        - containerPort: {{ .Values.service.http.internalPort }}
+        - containerPort: {{ .Values.service.grpc.internalPort }}
         resources:
 {{ toYaml .Values.resources | indent 12 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.service.http.internalPort }}
+            timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.service.http.internalPort }}
+            timeoutSeconds: 10

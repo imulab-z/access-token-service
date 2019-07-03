@@ -1,11 +1,12 @@
-FROM node:10
-ENV PORT 8080
-EXPOSE 8080
+FROM golang:1.11
+RUN mkdir -p /go/src/github.com/imulab-z/access-token-service
+ADD . /go/src/github.com/imulab-z/access-token-service
+WORKDIR /go/src/github.com/imulab-z/access-token-service
+RUN CGO_ENABLED=0 GOOS=linux go build -o access-token-service .
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-COPY package.json .
-RUN npm install
-COPY . .
+FROM alpine:3.9.2
+RUN apk --no-cache add ca-certificates
+WORKDIR /bin
+COPY --from=0 /go/src/github.com/imulab-z/access-token-service/access-token-service .
 
-CMD ["npm", "start"]
+CMD ["access-token-service"]

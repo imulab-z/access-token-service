@@ -23,8 +23,32 @@ type TokenStrategy interface {
 	DeTokenize(ctx context.Context, accessToken string) (*exported.Session, error)
 }
 
+func NewJwtTokenStrategy(
+	keySet *jose.JSONWebKeySet,
+	alg jose.SignatureAlgorithm,
+	issuer string,
+	ttl int64,
+	leeway int64,
+	logger log.Logger,
+) TokenStrategy {
+	publicKeySet := &jose.JSONWebKeySet{Keys: make([]jose.JSONWebKey, 0)}
+	for _, k := range keySet.Keys {
+		publicKeySet.Keys = append(publicKeySet.Keys, k.Public())
+	}
+	return &jwtTokenStrategy{
+		fullKeySet:       keySet,
+		publicKeySet:     publicKeySet,
+		alg:              alg,
+		issuer:           issuer,
+		defaultLife:      time.Duration(ttl) * time.Second,
+		validationLeeway: time.Duration(leeway) * time.Second,
+		logger:           logger,
+	}
+}
+
 type jwtTokenStrategy struct {
-	keySet           *jose.JSONWebKeySet
+	fullKeySet       *jose.JSONWebKeySet
+	publicKeySet     *jose.JSONWebKeySet
 	alg              jose.SignatureAlgorithm
 	issuer           string
 	defaultLife      time.Duration
@@ -33,7 +57,7 @@ type jwtTokenStrategy struct {
 }
 
 func (s *jwtTokenStrategy) New(ctx context.Context, session *exported.Session) (string, error) {
-	jwk := selectSignatureKey(s.keySet, s.alg, session.ClientId)
+	jwk := selectSignatureKey(s.fullKeySet, s.alg, session.ClientId)
 	if jwk == nil {
 		return "", ErrServer("failed to select signing key for access token.")
 	}
@@ -68,7 +92,7 @@ func (s *jwtTokenStrategy) DeTokenize(ctx context.Context, accessToken string) (
 	var claims *claims
 	{
 		claims = newClaims()
-		err = tok.Claims(s.keySet, claims)
+		err = tok.Claims(s.publicKeySet, claims)
 		if err != nil {
 			s.logger.Log("error", err)
 			return nil, ErrInvalidToken(accessToken)

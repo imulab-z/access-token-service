@@ -1,17 +1,15 @@
 package pkg
 
-import "gopkg.in/square/go-jose.v2"
+import (
+	"gopkg.in/square/go-jose.v2"
+)
 
 func selectSignatureKey(keySet *jose.JSONWebKeySet, alg jose.SignatureAlgorithm, clientId string) *jose.JSONWebKey {
 	candidates := make([]jose.JSONWebKey, 0)
-
 	for _, k := range keySet.Keys {
-		if k.Use != "sig" {
-			continue
-		} else if k.Algorithm != string(alg) {
-			continue
+		if k.Use == "sig" && k.Algorithm == string(alg) {
+			candidates = append(candidates, k)
 		}
-		candidates = append(candidates, k)
 	}
 
 	switch len(candidates) {

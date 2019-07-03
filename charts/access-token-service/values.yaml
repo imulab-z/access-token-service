@@ -5,10 +5,16 @@ replicaCount: 1
 image:
   pullPolicy: IfNotPresent
 service:
-  name: node
-  type: ClusterIP
-  externalPort: 8080
-  internalPort: 8080
+  http:
+    name: node
+    type: ClusterIP
+    externalPort: 80
+    internalPort: 8080
+  grpc:
+    name: node
+    type: ClusterIP
+    externalPort: 80
+    internalPort: 8081
 resources:
   limits:
     cpu: 100m
