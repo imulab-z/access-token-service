@@ -9,10 +9,6 @@ import (
 	"net/http"
 )
 
-type tokenPayload struct {
-	AccessToken string `json:"access_token"`
-}
-
 func decodeIssueRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	payload := &exported.Session{}
 	if err := json.NewDecoder(r.Body).Decode(payload); err != nil {
@@ -23,9 +19,7 @@ func decodeIssueRequest(_ context.Context, r *http.Request) (interface{}, error)
 
 func encodeIssueResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(&tokenPayload{
-		AccessToken: response.(string),
-	})
+	return json.NewEncoder(w).Encode(response)
 }
 
 func makeIssueEndpoint(svc exported.Service) endpoint.Endpoint {

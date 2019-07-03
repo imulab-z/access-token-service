@@ -37,12 +37,14 @@ func encodeIssueResponse(_ context.Context, response interface{}) (interface{}, 
 	switch response.(type) {
 	case *pb.IssueResponse:
 		return response.(*pb.IssueResponse), nil
-	case string:
+	case *exported.AccessToken:
 		return &pb.IssueResponse{
 			Success:          true,
 			ErrorCode:        "",
 			ErrorDescription: "",
-			AccessToken:      response.(string),
+			AccessToken:      response.(*exported.AccessToken).Token,
+			TokenType:        response.(*exported.AccessToken).TokenType,
+			ExpiresIn:        response.(*exported.AccessToken).ExpiresIn,
 		}, nil
 	default:
 		return nil, pkg.ErrServer("unknown response type")

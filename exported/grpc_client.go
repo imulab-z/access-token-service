@@ -65,13 +65,13 @@ type grpcClient struct {
 	logger         log.Logger
 }
 
-func (c *grpcClient) Issue(ctx context.Context, session *Session) (string, error) {
+func (c *grpcClient) Issue(ctx context.Context, session *Session) (*AccessToken, error) {
 	resp, err := c.issueEndpoint(ctx, session)
 	if err != nil {
 		c.logger.Log("error", err)
-		return "", err
+		return nil, err
 	}
-	return resp.(string), nil
+	return resp.(*AccessToken), nil
 }
 
 func (c *grpcClient) Peek(ctx context.Context, refreshToken string) (*Session, error) {
@@ -122,7 +122,11 @@ func (c *grpcClient) encodeIssueRequest(_ context.Context, request interface{}) 
 func (c *grpcClient) decodeIssueResponse(_ context.Context, grpcReply interface{}) (interface{}, error) {
 	r := grpcReply.(*pb.IssueResponse)
 	if r.Success {
-		return r.AccessToken, nil
+		return &AccessToken{
+			Token:     r.AccessToken,
+			TokenType: r.TokenType,
+			ExpiresIn: r.ExpiresIn,
+		}, nil
 	} else {
 		return "", c.errFunc(r.ErrorCode, r.ErrorDescription)
 	}

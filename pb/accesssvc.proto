@@ -17,6 +17,8 @@ message IssueResponse {
     string error_code = 2;
     string error_description = 3;
     string access_token = 4;
+    string token_type = 5;
+    int64 expires_in = 6;
 }
 
 message PeekRequest {

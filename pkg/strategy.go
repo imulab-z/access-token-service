@@ -16,6 +16,9 @@ const (
 )
 
 type TokenStrategy interface {
+	// Return the type of token this strategy generates
+	TokenType() string
+
 	// Create a new access token
 	New(ctx context.Context, session *exported.Session) (string, error)
 
@@ -54,6 +57,10 @@ type jwtTokenStrategy struct {
 	defaultLife      time.Duration
 	validationLeeway time.Duration
 	logger           log.Logger
+}
+
+func (s *jwtTokenStrategy) TokenType() string {
+	return "Bearer"
 }
 
 func (s *jwtTokenStrategy) New(ctx context.Context, session *exported.Session) (string, error) {
