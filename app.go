@@ -4,16 +4,22 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-kit/kit/log"
+	gt "github.com/go-kit/kit/transport/grpc"
 	"github.com/go-redis/redis"
 	"github.com/imulab-z/access-token-service/exported"
+	"github.com/imulab-z/access-token-service/pb"
 	"github.com/imulab-z/access-token-service/pkg"
 	"github.com/imulab-z/access-token-service/pkg/mw"
 	"github.com/imulab-z/access-token-service/pkg/svc"
+	grpctransport "github.com/imulab-z/access-token-service/pkg/transport/grpc"
 	httptransport "github.com/imulab-z/access-token-service/pkg/transport/http"
 	discoverysvc "github.com/imulab-z/discovery-service/exported"
 	keysvc "github.com/imulab-z/key-service/exported"
 	"github.com/urfave/cli"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"gopkg.in/square/go-jose.v2"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -226,6 +232,24 @@ func main() {
 				addr := fmt.Sprintf(":%d", argHttpPort)
 				logger.Log("transport", "HTTP", "addr", addr)
 				errors <- http.ListenAndServe(addr, server)
+			}()
+
+			go func() {
+				addr := fmt.Sprintf(":%d", argGrpcPort)
+				grpcListener, err := net.Listen("tcp", addr)
+				if err != nil {
+					errors <- err
+					os.Exit(1)
+				}
+				logger.Log("transport", "gRPC", "addr", addr)
+
+				baseServer := grpc.NewServer(grpc.UnaryInterceptor(gt.Interceptor))
+				reflection.Register(baseServer)
+
+				server := grpctransport.NewGrpcServer(service, logger)
+
+				pb.RegisterAccessTokenServiceServer(baseServer, server)
+				errors <- baseServer.Serve(grpcListener)
 			}()
 
 			return <-errors
