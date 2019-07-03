@@ -21,7 +21,7 @@ func NewService(redis *redis.Client, strategy pkg.TokenStrategy, ttl int64, leew
 		redis:            redis,
 		strategy:         strategy,
 		defaultLife:      time.Duration(ttl) * time.Second,
-		validationLeeway: time.Duration(ttl) * time.Second,
+		validationLeeway: time.Duration(leeway) * time.Second,
 		logger:           logger,
 	}
 }
