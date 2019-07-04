@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/imulab-z/access-token-service/exported"
-	"github.com/imulab-z/access-token-service/pb"
+	"github.com/imulab-z/access-token-service/atpb"
 	"github.com/imulab-z/access-token-service/pkg"
 )
 
 func decodePeekRequest(_ context.Context, r interface{}) (interface{}, error) {
-	return r.(*pb.PeekRequest).AccessToken, nil
+	return r.(*atpb.PeekRequest).AccessToken, nil
 }
 
 func encodePeekResponse(_ context.Context, response interface{}) (interface{}, error) {
 	switch response.(type) {
-	case *pb.PeekResponse:
+	case *atpb.PeekResponse:
 		return response, nil
 	case *exported.Session:
 		var accessClaimsJson string
@@ -28,9 +28,9 @@ func encodePeekResponse(_ context.Context, response interface{}) (interface{}, e
 			accessClaimsJson = string(raw)
 		}
 
-		return &pb.PeekResponse{
+		return &atpb.PeekResponse{
 			Success: true,
-			Session: &pb.Session{
+			Session: &atpb.Session{
 				RequestId:        response.(*exported.Session).RequestId,
 				ClientId:         response.(*exported.Session).ClientId,
 				RedirectUri:      response.(*exported.Session).RedirectUri,
@@ -56,7 +56,7 @@ func makePeekEndpoint(svc exported.Service) endpoint.Endpoint {
 				se = pkg.ErrServer(err.Error()).(*pkg.ServiceError)
 			}
 
-			return &pb.PeekResponse{
+			return &atpb.PeekResponse{
 				Success:          false,
 				ErrorCode:        se.Err,
 				ErrorDescription: se.Description,
