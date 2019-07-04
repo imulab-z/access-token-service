@@ -6,7 +6,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	gt "github.com/go-kit/kit/transport/grpc"
-	"github.com/imulab-z/access-token-service/pb"
+	"github.com/imulab-z/access-token-service/atpb"
 	"google.golang.org/grpc"
 	"strings"
 )
@@ -25,31 +25,31 @@ func NewGrpcClient(conn *grpc.ClientConn, logger log.Logger, errFunc func(code, 
 
 		c.issueEndpoint = gt.NewClient(
 			conn,
-			"pb.AccessTokenService",
+			"atpb.AccessTokenService",
 			"Issue",
 			c.encodeIssueRequest,
 			c.decodeIssueResponse,
-			&pb.IssueResponse{},
+			&atpb.IssueResponse{},
 			options...
 		).Endpoint()
 
 		c.peekEndpoint = gt.NewClient(
 			conn,
-			"pb.AccessTokenService",
+			"atpb.AccessTokenService",
 			"Peek",
 			c.encodePeekRequest,
 			c.decodePeekResponse,
-			&pb.PeekResponse{},
+			&atpb.PeekResponse{},
 			options...
 		).Endpoint()
 
 		c.revokeEndpoint = gt.NewClient(
 			conn,
-			"pb.AccessTokenService",
+			"atpb.AccessTokenService",
 			"Revoke",
 			c.encodeRevokeRequest,
 			c.decodeRevokeResponse,
-			&pb.RevokeResponse{},
+			&atpb.RevokeResponse{},
 			options...
 		).Endpoint()
 	}
@@ -107,8 +107,8 @@ func (c *grpcClient) encodeIssueRequest(_ context.Context, request interface{}) 
 		}
 	}
 
-	return &pb.IssueRequest{
-		Session: &pb.Session{
+	return &atpb.IssueRequest{
+		Session: &atpb.Session{
 			RequestId:        r.RequestId,
 			ClientId:         r.ClientId,
 			RedirectUri:      r.RedirectUri,
@@ -120,7 +120,7 @@ func (c *grpcClient) encodeIssueRequest(_ context.Context, request interface{}) 
 }
 
 func (c *grpcClient) decodeIssueResponse(_ context.Context, grpcReply interface{}) (interface{}, error) {
-	r := grpcReply.(*pb.IssueResponse)
+	r := grpcReply.(*atpb.IssueResponse)
 	if r.Success {
 		return &AccessToken{
 			Token:     r.AccessToken,
@@ -133,11 +133,11 @@ func (c *grpcClient) decodeIssueResponse(_ context.Context, grpcReply interface{
 }
 
 func (c *grpcClient) encodePeekRequest(_ context.Context, request interface{}) (interface{}, error) {
-	return &pb.PeekRequest{AccessToken: request.(string)}, nil
+	return &atpb.PeekRequest{AccessToken: request.(string)}, nil
 }
 
 func (c *grpcClient) decodePeekResponse(_ context.Context, grpcReply interface{}) (interface{}, error) {
-	r := grpcReply.(*pb.PeekResponse)
+	r := grpcReply.(*atpb.PeekResponse)
 	if r.Success {
 		var accessClaims map[string]interface{}
 		{
@@ -163,11 +163,11 @@ func (c *grpcClient) decodePeekResponse(_ context.Context, grpcReply interface{}
 }
 
 func (c *grpcClient) encodeRevokeRequest(_ context.Context, request interface{}) (interface{}, error) {
-	return &pb.RevokeRequest{AccessToken: request.(string)}, nil
+	return &atpb.RevokeRequest{AccessToken: request.(string)}, nil
 }
 
 func (c *grpcClient) decodeRevokeResponse(_ context.Context, grpcReply interface{}) (interface{}, error) {
-	r := grpcReply.(*pb.RevokeResponse)
+	r := grpcReply.(*atpb.RevokeResponse)
 	if r.Success {
 		return struct{}{}, nil
 	} else {

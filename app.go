@@ -7,7 +7,7 @@ import (
 	gt "github.com/go-kit/kit/transport/grpc"
 	"github.com/go-redis/redis"
 	"github.com/imulab-z/access-token-service/exported"
-	"github.com/imulab-z/access-token-service/pb"
+	"github.com/imulab-z/access-token-service/atpb"
 	"github.com/imulab-z/access-token-service/pkg"
 	"github.com/imulab-z/access-token-service/pkg/mw"
 	"github.com/imulab-z/access-token-service/pkg/svc"
@@ -248,7 +248,7 @@ func main() {
 
 				server := grpctransport.NewGrpcServer(service, logger)
 
-				pb.RegisterAccessTokenServiceServer(baseServer, server)
+				atpb.RegisterAccessTokenServiceServer(baseServer, server)
 				errors <- baseServer.Serve(grpcListener)
 			}()
 

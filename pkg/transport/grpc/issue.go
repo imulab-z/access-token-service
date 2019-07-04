@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/imulab-z/access-token-service/exported"
-	"github.com/imulab-z/access-token-service/pb"
+	"github.com/imulab-z/access-token-service/atpb"
 	"github.com/imulab-z/access-token-service/pkg"
 	"strings"
 )
 
 func decodeIssueRequest(_ context.Context, r interface{}) (interface{}, error) {
-	req := r.(*pb.IssueRequest)
+	req := r.(*atpb.IssueRequest)
 
 	var accessClaims map[string]interface{}
 	{
@@ -35,10 +35,10 @@ func decodeIssueRequest(_ context.Context, r interface{}) (interface{}, error) {
 
 func encodeIssueResponse(_ context.Context, response interface{}) (interface{}, error) {
 	switch response.(type) {
-	case *pb.IssueResponse:
-		return response.(*pb.IssueResponse), nil
+	case *atpb.IssueResponse:
+		return response.(*atpb.IssueResponse), nil
 	case *exported.AccessToken:
-		return &pb.IssueResponse{
+		return &atpb.IssueResponse{
 			Success:          true,
 			ErrorCode:        "",
 			ErrorDescription: "",
@@ -63,7 +63,7 @@ func makeIssueEndpoint(svc exported.Service) endpoint.Endpoint {
 				se = pkg.ErrServer(err.Error()).(*pkg.ServiceError)
 			}
 
-			return &pb.IssueResponse{
+			return &atpb.IssueResponse{
 				Success:          false,
 				ErrorCode:        se.Err,
 				ErrorDescription: se.Description,

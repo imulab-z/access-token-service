@@ -4,20 +4,20 @@ import (
 	"context"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/imulab-z/access-token-service/exported"
-	"github.com/imulab-z/access-token-service/pb"
+	"github.com/imulab-z/access-token-service/atpb"
 	"github.com/imulab-z/access-token-service/pkg"
 )
 
 func decodeRevokeRequest(_ context.Context, r interface{}) (interface{}, error) {
-	return r.(*pb.RevokeRequest).AccessToken, nil
+	return r.(*atpb.RevokeRequest).AccessToken, nil
 }
 
 func encodeRevokeResponse(_ context.Context, response interface{}) (interface{}, error) {
 	switch response.(type) {
-	case *pb.RevokeResponse:
+	case *atpb.RevokeResponse:
 		return response, nil
 	default:
-		return &pb.RevokeResponse{Success: true}, nil
+		return &atpb.RevokeResponse{Success: true}, nil
 	}
 }
 
@@ -33,7 +33,7 @@ func makeRevokeEndpoint(svc exported.Service) endpoint.Endpoint {
 				se = pkg.ErrServer(err.Error()).(*pkg.ServiceError)
 			}
 
-			return &pb.RevokeResponse{
+			return &atpb.RevokeResponse{
 				Success:          false,
 				ErrorCode:        se.Err,
 				ErrorDescription: se.Description,
