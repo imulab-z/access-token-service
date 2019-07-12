@@ -6,6 +6,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"github.com/imulab-z/access-token-service/exported"
+	"github.com/imulab-z/common/errors"
 	"net/http"
 )
 
@@ -19,8 +20,7 @@ func NewHTTPServer(redis *redis.Client, svc exported.Service, logger log.Logger)
 	)
 	{
 		options := []ht.ServerOption{
-			ht.ServerErrorLogger(logger),
-			ht.ServerErrorEncoder(encodeError),
+			ht.ServerErrorEncoder(errors.EncodeErrorToBody),
 		}
 
 		issueHandler = ht.NewServer(

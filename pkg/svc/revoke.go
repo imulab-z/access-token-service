@@ -20,18 +20,18 @@ func (s *service) Revoke(ctx context.Context, accessToken string) error {
 	tok, err := jose.ParseSigned(accessToken)
 	if err != nil {
 		s.logger.Log("error", err)
-		return pkg.ErrInvalidToken(accessToken)
+		return pkg.ErrInvalidToken()
 	}
 
 	claims := jwt.Claims{}
 	if err := json.NewDecoder(bytes.NewReader(tok.UnsafePayloadWithoutVerification())).Decode(&claims); err != nil {
 		s.logger.Log("error", err)
-		return pkg.ErrInvalidToken(accessToken)
+		return pkg.ErrInvalidToken()
 	}
 
 	ttl := claims.Expiry.Time().Sub(time.Now())
 	if ttl < 0 {
-		return pkg.ErrTokenExpired(accessToken)
+		return pkg.ErrTokenExpired()
 	}
 
 	cmd := s.redis.Set(tokenKey(accessToken), "0", ttl + s.validationLeeway)

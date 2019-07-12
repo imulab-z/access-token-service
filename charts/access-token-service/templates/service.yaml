@@ -17,15 +17,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: "{{ .Chart.Name }}-grpc"
+  name: "{{ .Chart.Name }}-rpc"
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 spec:
-  type: {{ .Values.service.grpc.type }}
+  type: {{ .Values.service.rpc.type }}
   ports:
-  - port: {{ .Values.service.grpc.externalPort }}
-    targetPort: {{ .Values.service.grpc.internalPort }}
+  - port: {{ .Values.service.rpc.externalPort }}
+    targetPort: {{ .Values.service.rpc.internalPort }}
     protocol: TCP
-    name: {{ .Values.service.grpc.name }}
+    name: {{ .Values.service.rpc.name }}
   selector:
     app: {{ template "fullname" . }}
