@@ -12,7 +12,7 @@ import (
 func decodePeekRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	refreshToken := r.URL.Query().Get("access_token")
 	if len(refreshToken) == 0 {
-		return nil, pkg.ErrInvalidRequest("missing required parameter 'access_token'.")
+		return nil, pkg.ErrParameterRequired("access_token")
 	}
 	return refreshToken, nil
 }

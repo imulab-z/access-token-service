@@ -1,51 +1,27 @@
 package pkg
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/imulab-z/common/errors"
+)
 
-type ServiceError struct {
-	Err         string            `json:"error"`
-	Description string            `json:"error_description"`
-	StatusCode  int               `json:"-"`
-	Headers     map[string]string `json:"-"`
+func ErrTokenExpired() error {
+	return errors.InvalidGrant("access token has expired")
 }
 
-func (e ServiceError) Error() string {
-	return e.Err
-}
-
-func (e ServiceError) IsInvalidGrantError() bool {
-	return e.Err == "invalid_grant"
-}
-
-func ErrTokenExpired(token string) error {
-	return &ServiceError{
-		Err:         "invalid_grant",
-		Description: fmt.Sprintf("token [%s] has expired.", token),
-		StatusCode:  400,
-	}
-}
-
-func ErrInvalidToken(token string) error {
-	return &ServiceError{
-		Err:         "invalid_grant",
-		Description: fmt.Sprintf("token [%s] is invalid.", token),
-		StatusCode:  400,
-	}
+func ErrInvalidToken() error {
+	return errors.InvalidGrant("access token is invalid")
 }
 
 func ErrInvalidRequest(detail string) error {
-	return &ServiceError{
-		Err:         "invalid_request",
-		Description: detail,
-		StatusCode:  400,
-	}
+	return errors.InvalidRequest(detail)
+}
+
+func ErrParameterRequired(param string) error {
+	return errors.InvalidRequest(fmt.Sprintf("parameter <%s> is required", param))
 }
 
 func ErrServer(reason string) error {
-	return &ServiceError{
-		Err:         "server_error",
-		Description: reason,
-		StatusCode:  500,
-	}
+	return errors.ServerError(reason)
 }
 

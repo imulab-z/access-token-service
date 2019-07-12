@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 	"github.com/imulab-z/access-token-service/exported"
+	"github.com/imulab-z/common/errors"
 	"time"
 )
 
@@ -14,7 +15,7 @@ func (s *service) Issue(ctx context.Context, session *exported.Session) (*export
 
 	token, err = s.strategy.New(ctx, session)
 	if err != nil {
-		return nil, err
+		return nil, errors.EnsureConnectError(err)
 	}
 
 	return &exported.AccessToken{

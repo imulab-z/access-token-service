@@ -22,8 +22,8 @@ spec:
         env:
         - name: HTTP_PORT
           value: {{ .Values.service.http.internalPort | quote }}
-        - name: GRPC_PORT
-          value: {{ .Values.service.grpc.internalPort | quote }}
+        - name: RPC_PORT
+          value: {{ .Values.service.rpc.internalPort | quote }}
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
@@ -74,7 +74,7 @@ spec:
           value: "80"
         ports:
         - containerPort: {{ .Values.service.http.internalPort }}
-        - containerPort: {{ .Values.service.grpc.internalPort }}
+        - containerPort: {{ .Values.service.rpc.internalPort }}
         resources:
 {{ toYaml .Values.resources | indent 12 }}
         livenessProbe:

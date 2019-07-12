@@ -92,7 +92,7 @@ func (s *jwtTokenStrategy) DeTokenize(ctx context.Context, accessToken string) (
 		tok, err = jwt.ParseSigned(accessToken)
 		if err != nil {
 			s.logger.Log("error", err)
-			return nil, ErrInvalidToken(accessToken)
+			return nil, ErrInvalidToken()
 		}
 	}
 
@@ -102,7 +102,7 @@ func (s *jwtTokenStrategy) DeTokenize(ctx context.Context, accessToken string) (
 		err = tok.Claims(s.publicKeySet, claims)
 		if err != nil {
 			s.logger.Log("error", err)
-			return nil, ErrInvalidToken(accessToken)
+			return nil, ErrInvalidToken()
 		}
 	}
 
@@ -112,7 +112,7 @@ func (s *jwtTokenStrategy) DeTokenize(ctx context.Context, accessToken string) (
 	}, s.validationLeeway)
 	if err != nil {
 		s.logger.Log("error", err)
-		return nil, ErrInvalidToken(accessToken)
+		return nil, ErrInvalidToken()
 	}
 
 	var session *exported.Session

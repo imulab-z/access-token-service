@@ -1,26 +1,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"github.com/go-kit/kit/log"
-	gt "github.com/go-kit/kit/transport/grpc"
 	"github.com/go-redis/redis"
 	"github.com/imulab-z/access-token-service/exported"
-	"github.com/imulab-z/access-token-service/atpb"
 	"github.com/imulab-z/access-token-service/pkg"
 	"github.com/imulab-z/access-token-service/pkg/mw"
 	"github.com/imulab-z/access-token-service/pkg/svc"
-	grpctransport "github.com/imulab-z/access-token-service/pkg/transport/grpc"
 	httptransport "github.com/imulab-z/access-token-service/pkg/transport/http"
 	discoverysvc "github.com/imulab-z/discovery-service/exported"
 	keysvc "github.com/imulab-z/key-service/exported"
 	"github.com/urfave/cli"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"gopkg.in/square/go-jose.v2"
 	"net"
 	"net/http"
+	"net/rpc"
 	"os"
 	"os/signal"
 	"syscall"
@@ -39,7 +34,7 @@ func main() {
 	var (
 		app                 *cli.App
 		argHttpPort         int
-		argGrpcPort         int
+		argRpcPort          int
 		argRedisHost        string
 		argRedisPort        int
 		argRedisPwd         string
@@ -65,11 +60,11 @@ func main() {
 				Usage:       "Port the http service listens on.",
 			},
 			cli.IntFlag{
-				Name:        "grpc-port, q",
+				Name:        "rpc-port, q",
 				Value:       8081,
-				EnvVar:      "GRPC_PORT",
-				Destination: &argGrpcPort,
-				Usage:       "Port the grpc service listens on.",
+				EnvVar:      "RPC_PORT",
+				Destination: &argRpcPort,
+				Usage:       "Port the rpc service listens on.",
 			},
 			cli.StringFlag{
 				Name:        "redis-host",
@@ -178,7 +173,7 @@ func main() {
 					argDiscoverySvcHost,
 					argDiscoverySvcPort,
 					logger,
-				).Get(context.Background())
+				).Get()
 				if discovery == nil {
 					return pkg.ErrServer("failed to obtain discovery")
 				}
@@ -235,21 +230,18 @@ func main() {
 			}()
 
 			go func() {
-				addr := fmt.Sprintf(":%d", argGrpcPort)
-				grpcListener, err := net.Listen("tcp", addr)
-				if err != nil {
+				server := rpc.NewServer()
+				if err := server.RegisterName(exported.RpcServiceName, svc.NewRpcService(service, logger)); err != nil {
 					errors <- err
-					os.Exit(1)
+					return
 				}
-				logger.Log("transport", "gRPC", "addr", addr)
 
-				baseServer := grpc.NewServer(grpc.UnaryInterceptor(gt.Interceptor))
-				reflection.Register(baseServer)
+				addr := fmt.Sprintf(":%d", argRpcPort)
+				listener, _ := net.Listen("tcp", addr)
+				defer listener.Close()
 
-				server := grpctransport.NewGrpcServer(service, logger)
-
-				atpb.RegisterAccessTokenServiceServer(baseServer, server)
-				errors <- baseServer.Serve(grpcListener)
+				logger.Log("transport", "RPC", "addr", addr)
+				server.Accept(listener)
 			}()
 
 			return <-errors
