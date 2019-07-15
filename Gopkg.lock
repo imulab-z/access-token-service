@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:c1100fc71e23b6a32b2c68a5202a848fd13811d5a10b12edb8019c3667d1cd9a"
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4b4cebaf850ec58f1bb1fec5bdebdf8501c2bc3f"
+  version = "v3.0.0"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -149,11 +157,13 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/cenkalti/backoff",
     "github.com/go-kit/kit/endpoint",
     "github.com/go-kit/kit/log",
     "github.com/go-kit/kit/transport/http",
     "github.com/go-redis/redis",
     "github.com/gorilla/mux",
+    "github.com/imulab-z/common/errors",
     "github.com/imulab-z/discovery-service/exported",
     "github.com/imulab-z/key-service/exported",
     "github.com/satori/go.uuid",
