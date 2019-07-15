@@ -11,6 +11,7 @@ spec:
     metadata:
       annotations:
         buildID: {{ .Values.buildID }}
+        linkerd.io/inject: enabled
       labels:
         draft: {{ default "draft-app" .Values.draft }}
         app: {{ template "fullname" . }}
