@@ -3,13 +3,9 @@ package exported
 import (
 	"context"
 	"fmt"
-	"github.com/cenkalti/backoff"
 	"github.com/go-kit/kit/log"
 	"github.com/imulab-z/common/errors"
-	"net"
 	"net/rpc"
-	"sync"
-	"time"
 )
 
 const RpcServiceName = "AccessTokenService"
@@ -46,70 +42,63 @@ type RpcRevokeResponse struct {
 	Err *errors.ServiceError
 }
 
-func NewRpcClient(host string, port int, logger log.Logger) (service Service, closer func(), err error) {
-	client := &rpcClient{
-		host:    host,
-		port:    port,
-		logger:  logger,
-		errChan: make(chan error),
+func NewRpcClient(host string, port int, logger log.Logger) Service {
+	return &rpcClient{
+		host:   host,
+		port:   port,
+		logger: logger,
 	}
-	if err := client.connect(); err != nil {
-		return nil, func() {}, err
-	}
-
-	go client.ensureConnection()
-
-	return client, func() {
-		close(client.errChan)
-		_ = client.c.Close()
-	}, nil
 }
 
 type rpcClient struct {
-	sync.RWMutex
-	host    string
-	port    int
-	errChan chan error
-	c      *rpc.Client
+	host   string
+	port   int
 	logger log.Logger
 }
 
-func (s *rpcClient) connect() error {
-	s.Lock()
-	defer s.Unlock()
+func (s *rpcClient) connected(ctx context.Context, methodName string, args interface{}, reply interface{}) error {
+	var (
+		errChan  chan error
+		doneChan chan struct{}
+	)
+	{
+		errChan = make(chan error, 1)
+		doneChan = make(chan struct{}, 1)
 
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", s.host, s.port), 10*time.Second)
-	if err != nil {
-		s.logger.Log("error", err)
-		return err
+		defer close(errChan)
+		defer close(doneChan)
 	}
 
-	s.c = rpc.NewClient(conn)
-	return nil
-}
-
-func (s *rpcClient) ensureConnection() {
-	for {
-		_ = <-s.errChan
-		s.logger.Log("access-token-service", "reconnecting")
-		_ = s.c.Close()
-		err := backoff.Retry(s.connect, backoff.NewExponentialBackOff())
+	go func() {
+		client, err := rpc.Dial("tcp", fmt.Sprintf("%s:%d", s.host, s.port))
 		if err != nil {
-			s.logger.Log("error", err)
-		} else {
-			s.logger.Log("access-token-service", "connected")
+			errChan <- err
+			return
 		}
-		time.Sleep(time.Second)
-	}
-}
 
-func (s *rpcClient) handledError(err error) error {
-	s.logger.Log("error", err)
+		call := <-client.Go(
+			fmt.Sprintf("%s.%s", RpcServiceName, methodName),
+			args,
+			reply,
+			make(chan *rpc.Call, 1),
+		).Done
+
+		if err := call.Error; err != nil {
+			errChan <- err
+			return
+		}
+
+		doneChan <- struct{}{}
+	}()
+
 	select {
-	case s.errChan <- err:
-	default:
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-errChan:
+		return err
+	case <-doneChan:
+		return nil
 	}
-	return errors.TemporarilyUnavailable()
 }
 
 func (s *rpcClient) Issue(ctx context.Context, session *Session) (*AccessToken, error) {
@@ -118,19 +107,17 @@ func (s *rpcClient) Issue(ctx context.Context, session *Session) (*AccessToken, 
 		response = &RpcIssueResponse{}
 	)
 
-	s.RLock()
-	defer s.RUnlock()
-
-	if err := s.c.Call(RpcServiceName+".Issue", request, response); err != nil {
-		return nil, s.handledError(err)
+	if err := s.connected(ctx, "Issue", request, response); err != nil {
+		s.logger.Log("error", err)
+		return nil, errors.TemporarilyUnavailable()
 	}
 
 	if response.Err != nil {
 		s.logger.Log("error", response.Err)
 		return nil, response.Err
-	} else {
-		return response.AccessToken, nil
 	}
+
+	return response.AccessToken, nil
 }
 
 func (s *rpcClient) Peek(ctx context.Context, accessToken string) (*Session, error) {
@@ -139,19 +126,17 @@ func (s *rpcClient) Peek(ctx context.Context, accessToken string) (*Session, err
 		response = &RpcPeekResponse{}
 	)
 
-	s.RLock()
-	defer s.RUnlock()
-
-	if err := s.c.Call(RpcServiceName+".Peek", request, response); err != nil {
-		return nil, s.handledError(err)
+	if err := s.connected(ctx, "Peek", request, response); err != nil {
+		s.logger.Log("error", err)
+		return nil, errors.TemporarilyUnavailable()
 	}
 
 	if response.Err != nil {
 		s.logger.Log("error", response.Err)
 		return nil, response.Err
-	} else {
-		return response.Session, nil
 	}
+
+	return response.Session, nil
 }
 
 func (s *rpcClient) Revoke(ctx context.Context, accessToken string) error {
@@ -160,17 +145,15 @@ func (s *rpcClient) Revoke(ctx context.Context, accessToken string) error {
 		response = &RpcRevokeResponse{}
 	)
 
-	s.RLock()
-	defer s.RUnlock()
-
-	if err := s.c.Call(RpcServiceName+".Revoke", request, response); err != nil {
-		return s.handledError(err)
+	if err := s.connected(ctx, "Revoke", request, response); err != nil {
+		s.logger.Log("error", err)
+		return errors.TemporarilyUnavailable()
 	}
 
 	if response.Err != nil {
 		s.logger.Log("error", response.Err)
 		return response.Err
-	} else {
-		return nil
 	}
+
+	return nil
 }
